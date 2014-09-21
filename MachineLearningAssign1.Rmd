@@ -1,0 +1,74 @@
+---
+title: "PracticalMachineLearning Assignment Writeup"
+author: "Michael Kothakota"
+date: "September 19, 2014"
+output: html_document
+---
+
+We are examining data from fitness data collectors.  The goal is to determine whether someone did an exercise correctly or not.  
+
+We will first load all of the libraries needed:
+
+```{r}
+library(caret)
+library(ggplot2)
+library(lattice)
+library(kernlab)
+library(rpart)
+```
+
+We'll then set the seed at 2009, read in the data, and split the Training data set into a training and test set.
+
+```{r}
+set.seed(2009)
+setwd("~/Desktop")
+data <- read.csv("pml-training.csv")
+testdata <- read.csv("pml-testing.csv")
+```
+
+We will need to clean the data.  There are many columns that need to be removed.  
+
+```{r}
+newset <- data
+newset[ newset == '' | newset == 'NA'] <- NA
+exc <- which(colSums(is.na(newset))!=0)
+newset <- newset[, -exc]
+newset <- newset[,-(1:7)]
+```
+
+Once we remove those columns, we'll need to split the training set
+
+
+```{r}
+inTrain <- createDataPartition(y=newset$classe, p=0.6, list=FALSE)
+
+train <- newset[inTrain,]
+test <- newset[-inTrain,]
+```
+
+
+
+Build a Random Forest model
+
+```{r}
+RFMod <- train(classe ~., data=train, method="rf", tunelength=1, ntree=25)
+RFMod
+```
+
+Examine the confusion matrix to determine how the "train" set performs versus the "test" set.
+
+```{r}
+confusionMatrix(predict(RFMod, train), train$classe)
+```
+
+We then want to look at the test data.  First we need to load the test data in.
+
+Then we apply the prediction model from the training data and apply it:
+
+```{r}
+assign <- predict(RFMod, testdata)
+assign
+```
+
+This data will be uploaded in text files for a grade.
+
